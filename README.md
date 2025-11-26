@@ -136,8 +136,8 @@ The app is built with:
 
 ## 📄 License
 
-MIT License
-Created by Alexander Kaydansky (kaydansky@gmail.com) - 2025
+- MIT License.
+- Created by Alexander Kaydansky (kaydansky@gmail.com) - 2025
 
 ## 🤝 Contributing
 
