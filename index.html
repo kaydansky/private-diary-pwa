@@ -1086,7 +1086,7 @@
                             <div class="entry-text">${this.escapeHtml(entry.text)}</div>
                         </div>
                         <div class="entry-actions">
-                            <button class="share-btn" data-text="${this.escapeHtml(entry.text)}" data-date="${date}" title="Share entry">
+                            <button class="share-btn" data-entry-id="${entry.id}" data-date="${date}" title="Share entry">
                                 <i class="bi bi-share"></i>
                             </button>
                             <button class="edit-btn" data-id="${entry.id}" title="Edit entry">
@@ -1108,7 +1108,12 @@
                 });
 
                 this.entryList.querySelectorAll('.share-btn').forEach(btn => {
-                    btn.addEventListener('click', () => this.shareEntry(btn.dataset.text, btn.dataset.date));
+                    btn.addEventListener('click', () => {
+                        const entry = entries.find(e => e.id === btn.dataset.entryId);
+                        if (entry) {
+                            this.shareEntry(entry.text, btn.dataset.date);
+                        }
+                    });
                 });
             }
 
@@ -1260,10 +1265,13 @@
 
             // Share entry using native share API or fallback
             shareEntry(text, dateStr) {
+                const readableDate = this.formatDate(dateStr);
+                const sharedText = `${readableDate}\n\n${text}`;
+                
                 if (navigator.share) {
                     navigator.share({
-                        title: `Diary • ${dateStr}`,
-                        text: text
+                        title: `Diary • ${readableDate}`,
+                        text: sharedText
                     }).catch(err => console.log("Share cancelled or failed", err));
                 } else {
                     // fallback for outdated WebView
