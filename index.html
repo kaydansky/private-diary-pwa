@@ -399,12 +399,11 @@
         }
 
         .entry-actions {
-            display: flex;
-            gap: 8px;
+            position: relative;
             flex-shrink: 0;
         }
 
-        .edit-btn, .delete-btn, .share-btn {
+        .menu-btn {
             background: none;
             border: none;
             cursor: pointer;
@@ -417,33 +416,59 @@
             justify-content: center;
             width: 32px;
             height: 32px;
+            color: var(--text-color);
         }
 
-        .share-btn {
+        .menu-btn:hover {
+            background: var(--day-hover);
+        }
+
+        .entry-menu {
+            position: absolute;
+            right: 0;
+            top: 100%;
+            background: var(--container-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-shadow: 0 4px 12px var(--shadow);
+            z-index: 1000;
+            min-width: 120px;
+            display: none;
+        }
+
+        .entry-menu.show {
+            display: block;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            font-size: 0.9rem;
+            color: var(--text-color);
+            transition: background 0.2s;
+        }
+
+        .menu-item:hover {
+            background: var(--day-hover);
+        }
+
+        .menu-item.share {
             color: var(--share-btn-color);
         }
 
-        .share-btn:hover {
-            background: rgba(40, 167, 69, 0.1);
-            color: var(--share-btn-hover);
-        }
-
-        .edit-btn {
+        .menu-item.edit {
             color: var(--edit-btn-color);
         }
 
-        .edit-btn:hover {
-            background: rgba(255, 193, 7, 0.1);
-            color: var(--edit-btn-hover);
-        }
-
-        .delete-btn {
+        .menu-item.delete {
             color: var(--delete-btn-color);
-        }
-
-        .delete-btn:hover {
-            background: rgba(220, 53, 69, 0.1);
-            color: var(--delete-btn-hover);
         }
 
         .entry-form {
@@ -801,6 +826,25 @@
                 icon.className = theme === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
             }
 
+            // Toggle entry menu visibility
+            toggleEntryMenu(menuBtn) {
+                const menu = menuBtn.nextElementSibling;
+                const isVisible = menu.classList.contains('show');
+                
+                this.hideAllMenus();
+                
+                if (!isVisible) {
+                    menu.classList.add('show');
+                }
+            }
+
+            // Hide all entry menus
+            hideAllMenus() {
+                document.querySelectorAll('.entry-menu').forEach(menu => {
+                    menu.classList.remove('show');
+                });
+            }
+
             // Cache DOM element references
             initElements() {
                 this.calendarDays = document.getElementById('calendarDays');
@@ -1086,35 +1130,54 @@
                             <div class="entry-text">${this.escapeHtml(entry.text)}</div>
                         </div>
                         <div class="entry-actions">
-                            <button class="share-btn" data-entry-id="${entry.id}" data-date="${date}" title="Share entry">
-                                <i class="bi bi-share"></i>
+                            <button class="menu-btn" data-entry-id="${entry.id}" data-date="${date}" title="Entry options">
+                                <i class="bi bi-three-dots-vertical"></i>
                             </button>
-                            <button class="edit-btn" data-id="${entry.id}" title="Edit entry">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            <button class="delete-btn" data-id="${entry.id}" title="Delete entry">
-                                <i class="bi bi-trash"></i>
-                            </button>
+                            <div class="entry-menu">
+                                <button class="menu-item share" data-action="share">
+                                    <i class="bi bi-share"></i> Share
+                                </button>
+                                <button class="menu-item edit" data-action="edit">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </button>
+                                <button class="menu-item delete" data-action="delete">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </div>
                         </div>
                     </li>
                 `).join('');
 
-                this.entryList.querySelectorAll('.edit-btn').forEach(btn => {
-                    btn.addEventListener('click', () => this.editEntry(btn.dataset.id));
+                this.entryList.querySelectorAll('.menu-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.toggleEntryMenu(btn);
+                    });
                 });
 
-                this.entryList.querySelectorAll('.delete-btn').forEach(btn => {
-                    btn.addEventListener('click', () => this.deleteEntry(btn.dataset.id));
-                });
-
-                this.entryList.querySelectorAll('.share-btn').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        const entry = entries.find(e => e.id === btn.dataset.entryId);
-                        if (entry) {
-                            this.shareEntry(entry.text, btn.dataset.date);
+                this.entryList.querySelectorAll('.menu-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const action = item.dataset.action;
+                        const menuBtn = item.closest('.entry-actions').querySelector('.menu-btn');
+                        const entryId = menuBtn.dataset.entryId;
+                        const date = menuBtn.dataset.date;
+                        
+                        this.hideAllMenus();
+                        
+                        if (action === 'share') {
+                            const entry = entries.find(e => e.id === entryId);
+                            if (entry) this.shareEntry(entry.text, date);
+                        } else if (action === 'edit') {
+                            this.editEntry(entryId);
+                        } else if (action === 'delete') {
+                            this.deleteEntry(entryId);
                         }
                     });
                 });
+
+                // Close menus when clicking outside
+                document.addEventListener('click', () => this.hideAllMenus());
             }
 
             // Show entry form for creating new entry

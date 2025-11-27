@@ -117,6 +117,7 @@ Even though the app is accessed via a public URL, **all your diary entries remai
 1. **Start writing**: Click on today's date and hit "Add Entry"
 2. **Navigate**: Use the calendar to browse different dates
 3. **Search**: Use the search box to find specific entries
+4. **Share**: Click 3 dots next to an entry → "Share", "Edit" and "Delete" options
 4. **Customize**: Toggle between light and dark themes
 
 ## 💻 Technical Details
