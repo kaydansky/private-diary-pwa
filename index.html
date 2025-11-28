@@ -351,7 +351,7 @@
             font-weight: 500;
         }
 
-        .add-entry-btn {
+        .add-entry-btn, .share-day-btn {
             background: var(--add-btn-bg);
             color: white;
             border: none;
@@ -361,12 +361,28 @@
             font-size: 1rem;
             font-weight: 400;
             transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
-        .add-entry-btn:hover {
+        .add-entry-btn:hover, .share-day-btn:hover:not(:disabled) {
             background: var(--add-btn-hover);
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .share-day-btn:disabled {
+            background: var(--clear-btn-bg);
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .entries-buttons {
+            display: flex;
+            gap: 10px;
         }
 
         .entry-list {
@@ -775,7 +791,10 @@
             <div class="entries-section hidden" id="entriesSection">
                 <div class="entries-header">
                     <h3 id="selectedDateTitle"></h3>
-                    <button class="add-entry-btn" id="addEntryBtn">+ Add Entry</button>
+                    <div class="entries-buttons">
+                        <button class="add-entry-btn" id="addEntryBtn">+ Add Entry</button>
+                        <button class="share-day-btn" id="shareDayBtn" title="Share this day's entries"><i class="bi bi-share"></i></button>
+                    </div>
                 </div>
 
                 <div class="entry-form hidden" id="entryForm">
@@ -868,6 +887,7 @@
                 this.entriesSection = document.getElementById('entriesSection');
                 this.selectedDateTitle = document.getElementById('selectedDateTitle');
                 this.addEntryBtn = document.getElementById('addEntryBtn');
+                this.shareDayBtn = document.getElementById('shareDayBtn');
                 this.entryForm = document.getElementById('entryForm');
                 this.entryTextarea = document.getElementById('entryTextarea');
                 this.saveEntryBtn = document.getElementById('saveEntryBtn');
@@ -884,6 +904,7 @@
                 this.nextMonthBtn.addEventListener('click', () => this.changeMonth(1));
                 this.todayBtn.addEventListener('click', () => this.goToToday());
                 this.addEntryBtn.addEventListener('click', () => this.showEntryForm());
+                this.shareDayBtn.addEventListener('click', () => this.shareDay());
                 this.saveEntryBtn.addEventListener('click', () => this.doneEntry());
                 this.clearEntryBtn.addEventListener('click', () => this.clearEntry());
                 this.entryTextarea.addEventListener('keyup', (e) => {
@@ -1131,6 +1152,9 @@
             // Render list of entries for a specific date
             renderEntries(date) {
                 const entries = this.entries[date] || [];
+                
+                // Update Share Day button visibility
+                this.shareDayBtn.style.display = entries.length === 0 ? 'none' : 'flex';
 
                 if (entries.length === 0) {
                     this.entryList.innerHTML = '<li class="no-entries">No entries for this day. Click "Add Entry" to create one.</li>';
@@ -1343,6 +1367,31 @@
             shareEntry(text, dateStr) {
                 const readableDate = this.formatDate(dateStr);
                 const sharedText = `${readableDate}\n\n${text}`;
+                
+                if (navigator.share) {
+                    navigator.share({
+                        title: `Diary • ${readableDate}`,
+                        text: sharedText
+                    }).catch(err => console.log("Share cancelled or failed", err));
+                } else {
+                    // fallback for outdated WebView
+                    alert("Share failed — the option is not supported on this device.");
+                }
+            }
+
+            // Share all entries for the selected day
+            shareDay() {
+                const entries = this.entries[this.selectedDate] || [];
+                
+                if (entries.length === 0) {
+                    alert("No entries to share for this day.");
+                    return;
+                }
+                
+                const readableDate = this.formatDate(this.selectedDate);
+                const separator = "\n" + "─".repeat(30) + "\n";
+                const entriesText = entries.map(entry => entry.text).join(separator);
+                const sharedText = `${readableDate}\n\n${entriesText}`;
                 
                 if (navigator.share) {
                     navigator.share({
