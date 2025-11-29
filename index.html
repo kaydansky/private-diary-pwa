@@ -547,6 +547,82 @@
             color: var(--delete-btn-color);
         }
 
+        /* Image actions modal for mobile */
+        .image-actions-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .image-actions-modal.show {
+            display: flex;
+        }
+
+        .image-actions-content {
+            background: var(--container-bg);
+            border-radius: 16px 16px 0 0;
+            padding: 20px;
+            width: 100%;
+            max-width: 400px;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        .image-actions-content h3 {
+            margin: 0 0 20px 0;
+            text-align: center;
+            color: var(--text-color);
+            font-size: 1.1rem;
+        }
+
+        .image-action-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            padding: 16px;
+            margin-bottom: 8px;
+            background: var(--day-hover);
+            border: none;
+            border-radius: 12px;
+            color: var(--text-color);
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .image-action-btn:hover {
+            background: var(--border-color);
+        }
+
+        .image-action-btn.delete {
+            color: #dc3545;
+        }
+
+        .image-action-btn.share {
+            color: var(--share-btn-color);
+        }
+
+        .image-action-btn.cancel {
+            background: var(--border-color);
+            margin-top: 12px;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+            }
+            to {
+                transform: translateY(0);
+            }
+        }
+
         .entry-list {
             list-style: none;
         }
@@ -1000,6 +1076,22 @@
         </button>
     </div>
 
+    <!-- Image Actions Modal for Mobile -->
+    <div class="image-actions-modal" id="imageActionsModal">
+        <div class="image-actions-content">
+            <h3>Image Options</h3>
+            <button class="image-action-btn share" id="shareImageModalBtn">
+                <i class="bi bi-share-fill"></i> Share Image
+            </button>
+            <button class="image-action-btn delete" id="deleteImageModalBtn">
+                <i class="bi bi-trash"></i> Delete Image
+            </button>
+            <button class="image-action-btn cancel" id="cancelImageActionsBtn">
+                Cancel
+            </button>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/minisearch@6.3.0/dist/umd/index.min.js"></script>
     <script>
         class DiaryApp {
@@ -1114,7 +1206,17 @@
                 document.getElementById('cancelImageBtn').addEventListener('click', () => this.hideMobileOptions());
                 document.getElementById('shareImageBtn').addEventListener('click', () => this.shareImage());
                 document.getElementById('deleteImageBtn').addEventListener('click', () => this.confirmImageDelete());
-                document.addEventListener('click', () => this.hideImageContextMenu());
+                document.getElementById('shareImageModalBtn').addEventListener('click', () => this.shareImage());
+                document.getElementById('deleteImageModalBtn').addEventListener('click', () => this.confirmImageDelete());
+                document.getElementById('cancelImageActionsBtn').addEventListener('click', () => this.hideImageActionsModal());
+                document.addEventListener('click', (e) => {
+                    if (!this.imageContextMenu.contains(e.target)) {
+                        this.hideImageContextMenu();
+                    }
+                    if (!document.getElementById('imageActionsModal').contains(e.target)) {
+                        this.hideImageActionsModal();
+                    }
+                });
                 this.saveEntryBtn.addEventListener('click', () => this.doneEntry());
                 this.clearEntryBtn.addEventListener('click', () => this.clearEntry());
                 this.entryTextarea.addEventListener('keyup', (e) => {
@@ -1689,8 +1791,8 @@
                 this.hideMobileOptions();
                 
                 // File size check (5MB limit)
-                if (file.size > 5 * 1024 * 1024) {
-                    alert('Image file is too large. Please select an image smaller than 5MB.');
+                if (file.size > 15 * 1024 * 1024) {
+                    alert('Image file is too large. Please select an image smaller than 15MB.');
                     return;
                 }
                 
@@ -1819,33 +1921,21 @@
             // Add context menu handlers for images
             addImageDeleteHandlers(img, imageUrl, entryId) {
                 let longPressTimer;
-                let menuShown = false;
-                let touchStartRect;
                 
-                // Mobile long press
+                // Mobile long press - use modal
                 img.addEventListener('touchstart', (e) => {
-                    menuShown = false;
-                    touchStartRect = e.target.getBoundingClientRect();
                     longPressTimer = setTimeout(() => {
                         e.preventDefault();
-                        e.stopPropagation();
-                        menuShown = true;
-                        this.showImageContextMenuAtPosition(touchStartRect, imageUrl, entryId);
-                    }, 800);
+                        this.showImageActionsModal(imageUrl, entryId);
+                    }, 600);
                 });
                 
-                img.addEventListener('touchend', (e) => {
-                    if (!menuShown) {
-                        clearTimeout(longPressTimer);
-                    } else {
-                        e.stopPropagation();
-                    }
+                img.addEventListener('touchend', () => {
+                    clearTimeout(longPressTimer);
                 });
                 
                 img.addEventListener('touchmove', () => {
-                    if (!menuShown) {
-                        clearTimeout(longPressTimer);
-                    }
+                    clearTimeout(longPressTimer);
                 });
                 
                 // Desktop right click
@@ -1870,23 +1960,23 @@
                 e.stopPropagation();
             }
             
-            // Show image context menu at specific position (for mobile)
-            showImageContextMenuAtPosition(rect, imageUrl, entryId) {
-                this.currentImageUrl = imageUrl;
-                this.currentImageEntryId = entryId;
-                
-                const menu = this.imageContextMenu;
-                
-                // Mobile long press - use captured element position
-                menu.style.left = `${rect.right - 120}px`;
-                menu.style.top = `${rect.bottom + 5}px`;
-                
-                menu.classList.add('show');
-            }
+
 
             // Hide image context menu
             hideImageContextMenu() {
                 this.imageContextMenu.classList.remove('show');
+            }
+
+            // Show image actions modal for mobile
+            showImageActionsModal(imageUrl, entryId) {
+                this.currentImageUrl = imageUrl;
+                this.currentImageEntryId = entryId;
+                document.getElementById('imageActionsModal').classList.add('show');
+            }
+
+            // Hide image actions modal
+            hideImageActionsModal() {
+                document.getElementById('imageActionsModal').classList.remove('show');
             }
 
             // Share single image
@@ -1894,6 +1984,7 @@
                 if (!this.currentImageUrl) return;
                 
                 this.hideImageContextMenu();
+                this.hideImageActionsModal();
                 const imageId = this.currentImageUrl.replace('image-', '');
                 const blob = await this.getImageFromIndexedDB(imageId);
                 
@@ -1917,6 +2008,7 @@
                 if (!this.currentImageUrl) return;
                 
                 this.hideImageContextMenu();
+                this.hideImageActionsModal();
                 if (confirm('Delete this image?')) {
                     this.deleteImage(this.currentImageUrl, this.currentImageEntryId);
                 }
