@@ -393,6 +393,160 @@
             gap: 10px;
         }
 
+        .add-image-btn {
+            background: var(--add-btn-bg);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 400;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .add-image-btn:hover {
+            background: var(--add-btn-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .entry-images {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .image-thumbnail {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .image-thumbnail:hover {
+            transform: scale(1.05);
+        }
+
+        .image-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .image-modal.show {
+            display: flex;
+        }
+
+        .image-modal img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+
+        .image-modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+        }
+
+        .mobile-image-options {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--container-bg);
+            border-top: 1px solid var(--border-color);
+            padding: 20px;
+            display: none;
+            z-index: 1500;
+        }
+
+        .mobile-image-options.show {
+            display: block;
+        }
+
+        .image-option-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: var(--add-btn-bg);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .image-option-btn:hover {
+            background: var(--add-btn-hover);
+        }
+
+        .hidden-file-input {
+            display: none;
+        }
+
+        .image-context-menu {
+            position: absolute;
+            background: var(--container-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-shadow: 0 4px 12px var(--shadow);
+            z-index: 1500;
+            min-width: 120px;
+            display: none;
+        }
+
+        .image-context-menu.show {
+            display: block;
+        }
+
+        .image-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            font-size: 0.9rem;
+            color: var(--text-color);
+            transition: background 0.2s;
+        }
+
+        .image-menu-item:hover {
+            background: var(--day-hover);
+        }
+
+        .image-menu-item.share {
+            color: var(--share-btn-color);
+        }
+
+        .image-menu-item.delete {
+            color: var(--delete-btn-color);
+        }
+
         .entry-list {
             list-style: none;
         }
@@ -800,8 +954,9 @@
                 <div class="entries-header">
                     <h3 id="selectedDateTitle"></h3>
                     <div class="entries-buttons">
-                        <button class="add-entry-btn" id="addEntryBtn">+ Add Entry</button>
-                        <button class="share-day-btn" id="shareDayBtn" title="Share this day's entries"><i class="bi bi-share"></i></button>
+                        <button class="add-entry-btn" id="addEntryBtn"><i class="bi bi-calendar-plus"></i> Add Entry</button>
+                        <button class="add-image-btn" id="addImageBtn"><i class="bi bi-image"></i> Add Image</button>
+                        <button class="share-day-btn" id="shareDayBtn" title="Share this day's entries"><i class="bi bi-share-fill"></i></button>
                     </div>
                 </div>
 
@@ -816,6 +971,33 @@
                 <ul class="entry-list" id="entryList"></ul>
             </div>
         </div>
+    </div>
+
+    <!-- Image Modal -->
+    <div class="image-modal" id="imageModal">
+        <button class="image-modal-close" id="imageModalClose">&times;</button>
+        <img id="modalImage" src="" alt="Full size image">
+    </div>
+
+    <!-- Mobile Image Options -->
+    <div class="mobile-image-options" id="mobileImageOptions">
+        <button class="image-option-btn" id="selectImageBtn">Select from Gallery</button>
+        <button class="image-option-btn" id="cameraBtn">Take Photo</button>
+        <button class="image-option-btn" id="cancelImageBtn">Cancel</button>
+    </div>
+
+    <!-- Hidden File Inputs -->
+    <input type="file" class="hidden-file-input" id="fileInput" accept="image/*">
+    <input type="file" class="hidden-file-input" id="cameraInput" accept="image/*" capture="environment">
+
+    <!-- Image Context Menu -->
+    <div class="image-context-menu" id="imageContextMenu">
+        <button class="image-menu-item share" id="shareImageBtn">
+            <i class="bi bi-share"></i> Share
+        </button>
+        <button class="image-menu-item delete" id="deleteImageBtn">
+            <i class="bi bi-trash"></i> Delete
+        </button>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/minisearch@6.3.0/dist/umd/index.min.js"></script>
@@ -895,7 +1077,17 @@
                 this.entriesSection = document.getElementById('entriesSection');
                 this.selectedDateTitle = document.getElementById('selectedDateTitle');
                 this.addEntryBtn = document.getElementById('addEntryBtn');
+                this.addImageBtn = document.getElementById('addImageBtn');
                 this.shareDayBtn = document.getElementById('shareDayBtn');
+                this.imageModal = document.getElementById('imageModal');
+                this.imageModalClose = document.getElementById('imageModalClose');
+                this.modalImage = document.getElementById('modalImage');
+                this.mobileImageOptions = document.getElementById('mobileImageOptions');
+                this.fileInput = document.getElementById('fileInput');
+                this.cameraInput = document.getElementById('cameraInput');
+                this.imageContextMenu = document.getElementById('imageContextMenu');
+                this.currentImageUrl = null;
+                this.currentImageEntryId = null;
                 this.entryForm = document.getElementById('entryForm');
                 this.entryTextarea = document.getElementById('entryTextarea');
                 this.saveEntryBtn = document.getElementById('saveEntryBtn');
@@ -912,7 +1104,17 @@
                 this.nextMonthBtn.addEventListener('click', () => this.changeMonth(1));
                 this.todayBtn.addEventListener('click', () => this.goToToday());
                 this.addEntryBtn.addEventListener('click', () => this.showEntryForm());
+                this.addImageBtn.addEventListener('click', () => this.handleImageUpload());
                 this.shareDayBtn.addEventListener('click', () => this.shareDay());
+                this.imageModalClose.addEventListener('click', () => this.closeImageModal());
+                this.fileInput.addEventListener('change', (e) => this.processImageFile(e.target.files[0]));
+                this.cameraInput.addEventListener('change', (e) => this.processImageFile(e.target.files[0]));
+                document.getElementById('selectImageBtn').addEventListener('click', () => this.fileInput.click());
+                document.getElementById('cameraBtn').addEventListener('click', () => this.cameraInput.click());
+                document.getElementById('cancelImageBtn').addEventListener('click', () => this.hideMobileOptions());
+                document.getElementById('shareImageBtn').addEventListener('click', () => this.shareImage());
+                document.getElementById('deleteImageBtn').addEventListener('click', () => this.confirmImageDelete());
+                document.addEventListener('click', () => this.hideImageContextMenu());
                 this.saveEntryBtn.addEventListener('click', () => this.doneEntry());
                 this.clearEntryBtn.addEventListener('click', () => this.clearEntry());
                 this.entryTextarea.addEventListener('keyup', (e) => {
@@ -929,7 +1131,7 @@
             // Initialize IndexedDB database
             async initDB() {
                 return new Promise((resolve, reject) => {
-                    const request = indexedDB.open('DiaryDB', 1);
+                    const request = indexedDB.open('DiaryDB', 2);
                     
                     request.onerror = () => reject(request.error);
                     request.onsuccess = () => resolve(request.result);
@@ -938,6 +1140,9 @@
                         const db = event.target.result;
                         if (!db.objectStoreNames.contains('entries')) {
                             db.createObjectStore('entries', { keyPath: 'date' });
+                        }
+                        if (!db.objectStoreNames.contains('images')) {
+                            db.createObjectStore('images', { keyPath: 'id' });
                         }
                     };
                 });
@@ -1173,6 +1378,7 @@
                     <li class="entry-item">
                         <div class="entry-content">
                             <div class="entry-text">${this.escapeHtml(entry.text)}</div>
+                            <div class="entry-images" id="images-${entry.id}"></div>
                         </div>
                         <div class="entry-actions">
                             <button class="menu-btn" data-entry-id="${entry.id}" data-date="${date}" title="Entry options">
@@ -1180,10 +1386,13 @@
                             </button>
                             <div class="entry-menu">
                                 <button class="menu-item share" data-action="share">
-                                    <i class="bi bi-share"></i> Share
+                                    <i class="bi bi-share-fill"></i> Share
+                                </button>
+                                <button class="menu-item image" data-action="image">
+                                    <i class="bi bi-image"></i> Image
                                 </button>
                                 <button class="menu-item edit" data-action="edit">
-                                    <i class="bi bi-pencil"></i> Edit
+                                    <i class="bi bi-pencil-square"></i> Edit
                                 </button>
                                 <button class="menu-item delete" data-action="delete">
                                     <i class="bi bi-trash"></i> Delete
@@ -1212,13 +1421,23 @@
                         
                         if (action === 'share') {
                             const entry = entries.find(e => e.id === entryId);
-                            if (entry) this.shareEntry(entry.text, date);
+                            if (entry) this.shareEntry(entry, date);
                         } else if (action === 'edit') {
                             this.editEntry(entryId);
                         } else if (action === 'delete') {
                             this.deleteEntry(entryId);
+                        } else if (action === 'image') {
+                            this.currentEntryId = entryId;
+                            this.handleImageUpload();
                         }
                     });
+                });
+
+                // Load images for entries
+                entries.forEach(entry => {
+                    if (entry.images && entry.images.length > 0) {
+                        this.loadEntryImages(entry.id, entry.images);
+                    }
                 });
 
                 // Close menus when clicking outside
@@ -1372,11 +1591,12 @@
             }
 
             // Share entry using native share API or fallback
-            shareEntry(text, dateStr) {
+            async shareEntry(entry, dateStr) {
                 const readableDate = this.formatDate(dateStr);
-                const sharedText = `${readableDate}\n\n${text}`;
+                const sharedText = `${readableDate}\n\n${entry.text}`;
                 
                 if (navigator.share) {
+                    // Always share text only - files and text together don't work reliably
                     navigator.share({
                         title: `Diary • ${readableDate}`,
                         text: sharedText
@@ -1398,10 +1618,11 @@
                 
                 const readableDate = this.formatDate(this.selectedDate);
                 const separator = "\n" + "─".repeat(10) + "\n";
-                const entriesText = entries.map(entry => entry.text).join(separator);
+                const entriesText = entries.map(entry => entry.text).filter(text => text.trim()).join(separator);
                 const sharedText = `${readableDate}\n\n${entriesText}`;
                 
                 if (navigator.share) {
+                    // Share text only for day sharing
                     navigator.share({
                         title: `Diary • ${readableDate}`,
                         text: sharedText
@@ -1410,6 +1631,274 @@
                     // fallback for outdated WebView
                     alert("Share failed — the option is not supported on this device.");
                 }
+            }
+
+            // Handle image upload based on device type
+            handleImageUpload() {
+                if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                    this.showMobileOptions();
+                } else {
+                    this.fileInput.click();
+                }
+            }
+
+            // Show mobile image options
+            showMobileOptions() {
+                this.mobileImageOptions.classList.add('show');
+            }
+
+            // Hide mobile image options
+            hideMobileOptions() {
+                this.mobileImageOptions.classList.remove('show');
+            }
+
+            // Process uploaded image file
+            async processImageFile(file) {
+                if (!file) return;
+                
+                this.hideMobileOptions();
+                
+                // File size check (5MB limit)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('Image file is too large. Please select an image smaller than 5MB.');
+                    return;
+                }
+                
+                // Image dimension check
+                const img = new Image();
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                img.onload = async () => {
+                    // Resize if too large (max 1920x1920)
+                    let { width, height } = img;
+                    const maxSize = 1920;
+                    
+                    if (width > maxSize || height > maxSize) {
+                        const ratio = Math.min(maxSize / width, maxSize / height);
+                        width *= ratio;
+                        height *= ratio;
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    // Convert to blob
+                    canvas.toBlob(async (blob) => {
+                        const imageUrl = await this.saveImageToIndexedDB(blob);
+                        await this.attachImageToEntry(imageUrl);
+                    }, 'image/jpeg', 0.8);
+                };
+                
+                img.src = URL.createObjectURL(file);
+            }
+
+            // Save image to IndexedDB and return URL
+            async saveImageToIndexedDB(blob) {
+                const db = await this.initDB();
+                const imageId = Date.now().toString();
+                const transaction = db.transaction(['images'], 'readwrite');
+                const store = transaction.objectStore('images');
+                
+                await store.put({ id: imageId, blob: blob });
+                return `image-${imageId}`;
+            }
+
+            // Attach image to entry
+            async attachImageToEntry(imageUrl) {
+                if (this.currentEntryId) {
+                    // Add to existing entry
+                    const entry = this.entries[this.selectedDate].find(e => e.id === this.currentEntryId);
+                    if (entry) {
+                        if (!entry.images) entry.images = [];
+                        entry.images.push(imageUrl);
+                    }
+                    this.currentEntryId = null;
+                } else {
+                    // Create new entry with image only
+                    if (!this.entries[this.selectedDate]) {
+                        this.entries[this.selectedDate] = [];
+                    }
+                    
+                    const newEntry = {
+                        id: Date.now().toString(),
+                        text: '',
+                        images: [imageUrl],
+                        createdAt: new Date().toISOString()
+                    };
+                    this.entries[this.selectedDate].push(newEntry);
+                }
+                
+                await this.saveEntries();
+                this.renderEntries(this.selectedDate);
+                this.renderCalendar();
+            }
+
+            // Show image in modal
+            async showImageModal(imageUrl) {
+                const imageBlob = await this.getImageFromIndexedDB(imageUrl.replace('image-', ''));
+                if (imageBlob) {
+                    this.modalImage.src = URL.createObjectURL(imageBlob);
+                    this.imageModal.classList.add('show');
+                }
+            }
+
+            // Close image modal
+            closeImageModal() {
+                this.imageModal.classList.remove('show');
+                URL.revokeObjectURL(this.modalImage.src);
+            }
+
+            // Get image from IndexedDB
+            async getImageFromIndexedDB(imageId) {
+                const db = await this.initDB();
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction(['images'], 'readonly');
+                    const store = transaction.objectStore('images');
+                    const request = store.get(imageId);
+                    
+                    request.onsuccess = () => {
+                        resolve(request.result ? request.result.blob : null);
+                    };
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            // Load images for an entry
+            async loadEntryImages(entryId, imageUrls) {
+                const container = document.getElementById(`images-${entryId}`);
+                if (!container) return;
+                
+                for (const imageUrl of imageUrls) {
+                    const imageId = imageUrl.replace('image-', '');
+                    const blob = await this.getImageFromIndexedDB(imageId);
+                    if (blob) {
+                        const img = document.createElement('img');
+                        img.className = 'image-thumbnail';
+                        img.src = URL.createObjectURL(blob);
+                        img.onclick = () => this.showImageModal(imageUrl);
+                        
+                        // Add delete functionality
+                        this.addImageDeleteHandlers(img, imageUrl, entryId);
+                        container.appendChild(img);
+                    }
+                }
+            }
+
+            // Add context menu handlers for images
+            addImageDeleteHandlers(img, imageUrl, entryId) {
+                let longPressTimer;
+                
+                // Mobile long press
+                img.addEventListener('touchstart', (e) => {
+                    longPressTimer = setTimeout(() => {
+                        e.preventDefault();
+                        this.showImageContextMenu(e, imageUrl, entryId);
+                    }, 800);
+                });
+                
+                img.addEventListener('touchend', () => {
+                    clearTimeout(longPressTimer);
+                });
+                
+                img.addEventListener('touchmove', () => {
+                    clearTimeout(longPressTimer);
+                });
+                
+                // Desktop right click
+                img.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    this.showImageContextMenu(e, imageUrl, entryId);
+                });
+            }
+
+            // Show image context menu
+            showImageContextMenu(e, imageUrl, entryId) {
+                this.currentImageUrl = imageUrl;
+                this.currentImageEntryId = entryId;
+                
+                const menu = this.imageContextMenu;
+                
+                // Use cursor position for desktop, element position for mobile
+                if (e.type === 'contextmenu') {
+                    // Desktop right-click - use cursor position
+                    menu.style.left = `${e.pageX}px`;
+                    menu.style.top = `${e.pageY}px`;
+                } else {
+                    // Mobile long press - use element position
+                    const rect = e.target.getBoundingClientRect();
+                    menu.style.left = `${rect.right - 120}px`;
+                    menu.style.top = `${rect.bottom + 5}px`;
+                }
+                
+                menu.classList.add('show');
+            }
+
+            // Hide image context menu
+            hideImageContextMenu() {
+                this.imageContextMenu.classList.remove('show');
+            }
+
+            // Share single image
+            async shareImage() {
+                if (!this.currentImageUrl) return;
+                
+                this.hideImageContextMenu();
+                const imageId = this.currentImageUrl.replace('image-', '');
+                const blob = await this.getImageFromIndexedDB(imageId);
+                
+                if (blob && navigator.share) {
+                    const file = new File([blob], 'diary-image.jpg', { type: 'image/jpeg' });
+                    try {
+                        await navigator.share({
+                            title: 'Diary Image',
+                            files: [file]
+                        });
+                    } catch (err) {
+                        console.log('Share cancelled or failed', err);
+                    }
+                } else {
+                    alert('Image sharing not supported on this device.');
+                }
+            }
+
+            // Confirm image deletion
+            confirmImageDelete() {
+                if (!this.currentImageUrl) return;
+                
+                this.hideImageContextMenu();
+                if (confirm('Delete this image?')) {
+                    this.deleteImage(this.currentImageUrl, this.currentImageEntryId);
+                }
+            }
+
+            // Delete image from entry and database
+            async deleteImage(imageUrl, entryId) {
+                // Remove from entry
+                const entry = this.entries[this.selectedDate].find(e => e.id === entryId);
+                if (entry && entry.images) {
+                    entry.images = entry.images.filter(img => img !== imageUrl);
+                    if (entry.images.length === 0) {
+                        delete entry.images;
+                    }
+                }
+                
+                // Delete from IndexedDB
+                const imageId = imageUrl.replace('image-', '');
+                await this.deleteImageFromIndexedDB(imageId);
+                
+                // Update UI
+                await this.saveEntries();
+                this.renderEntries(this.selectedDate);
+            }
+
+            // Delete image from IndexedDB
+            async deleteImageFromIndexedDB(imageId) {
+                const db = await this.initDB();
+                const transaction = db.transaction(['images'], 'readwrite');
+                const store = transaction.objectStore('images');
+                await store.delete(imageId);
             }
 
             // Toggle between dark and light themes
@@ -1437,8 +1926,9 @@
             }
         }
 
+        let app;
         document.addEventListener('DOMContentLoaded', () => {
-            new DiaryApp();
+            app = new DiaryApp();
             showMobileInstructions();
         });
     </script>
