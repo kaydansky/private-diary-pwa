@@ -10,20 +10,20 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/assets/icons/icon.svg",
+      "src": "assets/icons/icon.svg",
       "sizes": "144x144",
       "type": "image/svg+xml"
     }
   ],
   "screenshots": [
     {
-      "src": "/assets/screenshots/screenshot-wide.png",
+      "src": "assets/screenshots/screenshot-wide.png",
       "sizes": "975x933",
       "type": "image/png",
       "form_factor": "wide"
     },
     {
-      "src": "/assets/screenshots/screenshot-narrow.png",
+      "src": "assets/screenshots/screenshot-narrow.png",
       "sizes": "385x606",
       "type": "image/png",
       "form_factor": "narrow"
