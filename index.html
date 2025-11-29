@@ -954,8 +954,8 @@
                 <div class="entries-header">
                     <h3 id="selectedDateTitle"></h3>
                     <div class="entries-buttons">
-                        <button class="add-entry-btn" id="addEntryBtn"><i class="bi bi-calendar-plus"></i> Add Entry</button>
-                        <button class="add-image-btn" id="addImageBtn"><i class="bi bi-image"></i> Add Image</button>
+                        <button class="add-entry-btn" id="addEntryBtn"><i class="bi bi-calendar-plus"></i> Entry</button>
+                        <button class="add-image-btn" id="addImageBtn"><i class="bi bi-image"></i> Image</button>
                         <button class="share-day-btn" id="shareDayBtn" title="Share this day's entries"><i class="bi bi-share-fill"></i></button>
                     </div>
                 </div>
@@ -1593,10 +1593,34 @@
             // Share entry using native share API or fallback
             async shareEntry(entry, dateStr) {
                 const readableDate = this.formatDate(dateStr);
-                const sharedText = `${readableDate}\n\n${entry.text}`;
                 
                 if (navigator.share) {
-                    // Always share text only - files and text together don't work reliably
+                    // If entry has no text but has images, share images only
+                    if ((!entry.text || entry.text.trim() === '') && entry.images && entry.images.length > 0) {
+                        try {
+                            const files = [];
+                            for (const imageUrl of entry.images) {
+                                const imageId = imageUrl.replace('image-', '');
+                                const blob = await this.getImageFromIndexedDB(imageId);
+                                if (blob) {
+                                    const file = new File([blob], `diary-image-${imageId}.jpg`, { type: 'image/jpeg' });
+                                    files.push(file);
+                                }
+                            }
+                            if (files.length > 0) {
+                                await navigator.share({
+                                    title: `Diary • ${readableDate}`,
+                                    files: files
+                                });
+                                return;
+                            }
+                        } catch (err) {
+                            console.log('Image sharing failed', err);
+                        }
+                    }
+                    
+                    // Share text only for entries with text
+                    const sharedText = `${readableDate}\n\n${entry.text}`;
                     navigator.share({
                         title: `Diary • ${readableDate}`,
                         text: sharedText
@@ -1618,7 +1642,13 @@
                 
                 const readableDate = this.formatDate(this.selectedDate);
                 const separator = "\n" + "─".repeat(10) + "\n";
-                const entriesText = entries.map(entry => entry.text).filter(text => text.trim()).join(separator);
+                const entriesText = entries.map(entry => entry.text).filter(text => text && text.trim()).join(separator);
+                
+                if (!entriesText.trim()) {
+                    alert("No text entries to share for this day.");
+                    return;
+                }
+                
                 const sharedText = `${readableDate}\n\n${entriesText}`;
                 
                 if (navigator.share) {
@@ -1789,21 +1819,33 @@
             // Add context menu handlers for images
             addImageDeleteHandlers(img, imageUrl, entryId) {
                 let longPressTimer;
+                let menuShown = false;
+                let touchStartRect;
                 
                 // Mobile long press
                 img.addEventListener('touchstart', (e) => {
+                    menuShown = false;
+                    touchStartRect = e.target.getBoundingClientRect();
                     longPressTimer = setTimeout(() => {
                         e.preventDefault();
-                        this.showImageContextMenu(e, imageUrl, entryId);
+                        e.stopPropagation();
+                        menuShown = true;
+                        this.showImageContextMenuAtPosition(touchStartRect, imageUrl, entryId);
                     }, 800);
                 });
                 
-                img.addEventListener('touchend', () => {
-                    clearTimeout(longPressTimer);
+                img.addEventListener('touchend', (e) => {
+                    if (!menuShown) {
+                        clearTimeout(longPressTimer);
+                    } else {
+                        e.stopPropagation();
+                    }
                 });
                 
                 img.addEventListener('touchmove', () => {
-                    clearTimeout(longPressTimer);
+                    if (!menuShown) {
+                        clearTimeout(longPressTimer);
+                    }
                 });
                 
                 // Desktop right click
@@ -1820,17 +1862,24 @@
                 
                 const menu = this.imageContextMenu;
                 
-                // Use cursor position for desktop, element position for mobile
-                if (e.type === 'contextmenu') {
-                    // Desktop right-click - use cursor position
-                    menu.style.left = `${e.pageX}px`;
-                    menu.style.top = `${e.pageY}px`;
-                } else {
-                    // Mobile long press - use element position
-                    const rect = e.target.getBoundingClientRect();
-                    menu.style.left = `${rect.right - 120}px`;
-                    menu.style.top = `${rect.bottom + 5}px`;
-                }
+                // Desktop right-click - use cursor position
+                menu.style.left = `${e.pageX}px`;
+                menu.style.top = `${e.pageY}px`;
+                
+                menu.classList.add('show');
+                e.stopPropagation();
+            }
+            
+            // Show image context menu at specific position (for mobile)
+            showImageContextMenuAtPosition(rect, imageUrl, entryId) {
+                this.currentImageUrl = imageUrl;
+                this.currentImageEntryId = entryId;
+                
+                const menu = this.imageContextMenu;
+                
+                // Mobile long press - use captured element position
+                menu.style.left = `${rect.right - 120}px`;
+                menu.style.top = `${rect.bottom + 5}px`;
                 
                 menu.classList.add('show');
             }
@@ -1881,6 +1930,13 @@
                     entry.images = entry.images.filter(img => img !== imageUrl);
                     if (entry.images.length === 0) {
                         delete entry.images;
+                        // Delete entire entry if it has no text and no images
+                        if (!entry.text || entry.text.trim() === '') {
+                            this.entries[this.selectedDate] = this.entries[this.selectedDate].filter(e => e.id !== entryId);
+                            if (this.entries[this.selectedDate].length === 0) {
+                                delete this.entries[this.selectedDate];
+                            }
+                        }
                     }
                 }
                 
@@ -1891,6 +1947,7 @@
                 // Update UI
                 await this.saveEntries();
                 this.renderEntries(this.selectedDate);
+                this.renderCalendar();
             }
 
             // Delete image from IndexedDB
