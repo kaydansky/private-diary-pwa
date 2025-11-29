@@ -4,7 +4,7 @@ A PWA (Progressive Web App), privacy-focused digital diary application that runs
 
 ## 📸 Screenshot
 
-![Private Diary App](screenshots/screenshot.png)
+![Private Diary App](assets/screenshots/screenshot.png)
 - *The clean, intuitive interface of Private Diary showing the calendar view and entry form*
 
 ## 🚀 Progressive Web App Benefits
