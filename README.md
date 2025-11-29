@@ -78,6 +78,20 @@ A PWA (Progressive Web App), privacy-focused digital diary application that runs
 - **Intuitive editing**: Standard text editing shortcuts work as expected
 - **Accessibility**: Full keyboard navigation support
 
+### 📷 Image Support
+- **Multi-format support**: Upload JPEG, PNG, WebP, and other common image formats
+- **Smart compression**: Automatic resizing and quality optimization for efficient storage
+- **Size limits**: 15MB file size limit with intelligent compression to reduce storage impact
+- **Dimension control**: Images automatically resized to maximum 1920x1920 pixels
+- **Local storage**: Images stored securely in IndexedDB alongside text entries
+- **Gallery view**: Thumbnail previews with full-size modal viewing
+- **Mobile camera**: Direct camera capture on mobile devices with gallery selection fallback
+- **Context actions**: Long-press (mobile) or right-click (desktop) for share/delete options
+- **Modal interface**: Touch-friendly mobile modal for image actions
+- **Image sharing**: Native share integration for individual images or image-only entries
+- **Mixed entries**: Combine text and images in single diary entries
+- **Image-only entries**: Create entries with just images when words aren't enough
+
 ### 🎯 User Experience
 - **Clean interface**: Minimalist design focuses on your content
 - **Smooth animations**: Subtle transitions enhance the user experience
@@ -115,13 +129,15 @@ Even though the app is accessed via a public URL, **all your diary entries remai
 
 ### ✍️ Using the App
 1. **Start writing**: Click on today's date and hit "Add Entry"
-2. **Navigate**: Use the calendar to browse different dates
-3. **Search**: Use the search box to find specific entries
-4. **Share selected day entries**: Click "Share" button next to "Add Entry" one.
-5. **Share single entry**: Click 3 dots next to an entry → "Share"
-6. **Edit entry**: Click 3 dots next to an entry → "Edit"
-7. **Delete entry**: Click 3 dots next to an entry → "Delete"
-8. **Customize**: Toggle between light and dark themes
+2. **Add images**: Click "Image" button to upload photos or take pictures
+3. **Navigate**: Use the calendar to browse different dates
+4. **Search**: Use the search box to find specific entries
+5. **Share selected day entries**: Click "Share" button next to "Add Entry" one
+6. **Share single entry**: Click 3 dots next to an entry → "Share"
+7. **Edit entry**: Click 3 dots next to an entry → "Edit"
+8. **Delete entry**: Click 3 dots next to an entry → "Delete"
+9. **Image actions**: Long-press (mobile) or right-click (desktop) images for options
+10. **Customize**: Toggle between light and dark themes
 
 ## 💻 Technical Details
 
