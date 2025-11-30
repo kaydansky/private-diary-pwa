@@ -7,7 +7,7 @@
   "background_color": "#1a1a1a",
   "theme_color": "#667eea",
   "description": "A private, local diary app",
-  "orientation": "portrait",
+  "orientation": "any",
   "icons": [
     {
       "src": "assets/icons/icon.svg",
