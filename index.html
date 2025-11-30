@@ -796,24 +796,88 @@
             display: none;
         }
 
-        .theme-toggle {
+        .header-menu {
             position: absolute;
-            top: 20px;
+            top: 26px;
             right: 20px;
+        }
+
+        .menu-toggle {
             background: none;
-            border: 2px solid var(--text-color);
+            border: none;
             color: var(--text-color);
-            border-radius: 50%;
-            width: 25px;
-            height: 25px;
             cursor: pointer;
-            font-size: 0.9rem;
+            font-size: 1.2rem;
+            padding: 8px;
+            border-radius: 4px;
             transition: all 0.3s;
         }
 
-        .theme-toggle:hover {
-            background: var(--text-color);
-            color: var(--bg-color);
+        .menu-toggle:hover {
+            background: var(--day-hover);
+        }
+
+        .header-dropdown {
+            position: absolute;
+            right: 0;
+            top: 100%;
+            background: var(--container-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px var(--shadow);
+            z-index: 1000;
+            min-width: 160px;
+            display: none;
+            margin-top: 5px;
+        }
+
+        .header-dropdown.show {
+            display: block;
+        }
+
+        .header-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            font-size: 0.95rem;
+            color: var(--text-color);
+            transition: background 0.2s;
+        }
+
+        .header-menu-item:hover {
+            background: var(--day-hover);
+        }
+
+        .header-menu-item:first-child {
+            border-radius: 8px 8px 0 0;
+        }
+
+        .header-menu-item:last-child {
+            border-radius: 0 0 8px 8px;
+        }
+
+        .month-export {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 4px;
+            margin-top: 5px;
+            border-radius: 4px;
+            transition: all 0.3s;
+            /* opacity: 0.7; */
+        }
+
+        .month-export:hover {
+            background: var(--day-hover);
+            opacity: 1;
         }
 
         .header {
@@ -994,9 +1058,22 @@
         <div class="header">
             <h1>Private Diary</h1>
             <p>Your thoughts, stored locally and securely.</p>
-            <button class="theme-toggle" id="themeToggle" title="Toggle dark/light mode">
-                <i class="bi bi-moon-fill"></i>
-            </button>
+            <div class="header-menu">
+                <button class="menu-toggle" id="headerMenuToggle" title="Menu">
+                    <i class="bi bi-three-dots-vertical"></i>
+                </button>
+                <div class="header-dropdown" id="headerDropdown">
+                    <button class="header-menu-item" id="toggleThemeBtn">
+                        <i class="bi bi-moon-fill" id="themeIcon"></i> Toggle Theme
+                    </button>
+                    <button class="header-menu-item" id="exportBtn">
+                        <i class="bi bi-box-arrow-right"></i> Export
+                    </button>
+                    <button class="header-menu-item" id="importBtn" title="Supported data format: JSON diary exports">
+                        <i class="bi bi-box-arrow-in-left"></i> Import .JSON
+                    </button>
+                </div>
+            </div>
         </div>
 
         <div class="search-container">
@@ -1007,7 +1084,13 @@
         <div class="content">
             <div class="calendar">
                 <div class="calendar-header">
-                    <h2 id="currentMonth"></h2>
+                    <div style="display: flex; align-items: center;">
+                        <h2 id="currentMonth"></h2>
+                        <span style="margin: 0 8px; opacity: 0.7; font-size: 1.5rem;">•</span>
+                        <button class="month-export" id="monthExportBtn" title="Export this month">
+                            <i class="bi bi-box-arrow-right"></i>
+                        </button>
+                    </div>
                     <div class="nav-buttons">
                         <button class="nav-btn" id="prevMonth">← Prev</button>
                         <button class="nav-btn" id="todayBtn">Today</button>
@@ -1092,6 +1175,28 @@
         </div>
     </div>
 
+    <!-- Export Modal -->
+    <div class="image-actions-modal" id="exportModal">
+        <div class="image-actions-content">
+            <h3>Export Options</h3>
+            <button class="image-action-btn" id="exportAllBtn">
+                <i class="bi bi-upload"></i> Export All (Recommended)
+            </button>
+            <button class="image-action-btn" id="exportTextBtn">
+                <i class="bi bi-file-text"></i> Export Text Only
+            </button>
+            <button class="image-action-btn" id="exportImagesBtn">
+                <i class="bi bi-images"></i> Export Images Only
+            </button>
+            <button class="image-action-btn cancel" id="cancelExportBtn">
+                Cancel
+            </button>
+        </div>
+    </div>
+
+    <!-- Hidden File Input for Import -->
+    <input type="file" class="hidden-file-input" id="importInput" accept=".json" title="Supported data format: JSON diary exports">
+
     <script src="https://cdn.jsdelivr.net/npm/minisearch@6.3.0/dist/umd/index.min.js"></script>
     <script>
         class DiaryApp {
@@ -1123,8 +1228,7 @@
                 const theme = savedTheme || 'dark';
                 
                 document.documentElement.setAttribute('data-theme', theme);
-                const icon = this.themeToggle.querySelector('i');
-                icon.className = theme === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
+                this.themeIcon.className = theme === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
             }
 
             // Toggle entry menu visibility
@@ -1187,7 +1291,16 @@
                 this.entryList = document.getElementById('entryList');
                 this.searchInput = document.getElementById('searchInput');
                 this.searchResults = document.getElementById('searchResults');
-                this.themeToggle = document.getElementById('themeToggle');
+                this.headerMenuToggle = document.getElementById('headerMenuToggle');
+                this.headerDropdown = document.getElementById('headerDropdown');
+                this.toggleThemeBtn = document.getElementById('toggleThemeBtn');
+                this.themeIcon = document.getElementById('themeIcon');
+                this.exportBtn = document.getElementById('exportBtn');
+                this.importBtn = document.getElementById('importBtn');
+                this.monthExportBtn = document.getElementById('monthExportBtn');
+                this.exportModal = document.getElementById('exportModal');
+                this.importInput = document.getElementById('importInput');
+                this.isMonthExport = false;
             }
 
             // Set up event listeners for UI interactions
@@ -1227,7 +1340,20 @@
                     }
                 });
                 this.searchInput.addEventListener('input', (e) => this.handleSearch(e.target.value));
-                this.themeToggle.addEventListener('click', () => this.toggleTheme());
+                this.headerMenuToggle.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.toggleHeaderMenu();
+                });
+                this.toggleThemeBtn.addEventListener('click', () => this.toggleTheme());
+                this.exportBtn.addEventListener('click', () => this.showExportModal());
+                this.importBtn.addEventListener('click', () => this.importInput.click());
+                this.monthExportBtn.addEventListener('click', () => this.showExportModal(true));
+                this.importInput.addEventListener('change', (e) => this.handleImport(e.target.files[0]));
+                document.getElementById('exportAllBtn').addEventListener('click', () => this.exportAll());
+                document.getElementById('exportTextBtn').addEventListener('click', () => this.exportText());
+                document.getElementById('exportImagesBtn').addEventListener('click', () => this.exportImages());
+                document.getElementById('cancelExportBtn').addEventListener('click', () => this.hideExportModal());
+                document.addEventListener('click', () => this.hideHeaderMenu());
             }
 
             // Initialize IndexedDB database
@@ -1681,6 +1807,15 @@
             async deleteEntry(id) {
                 if (!confirm('Are you sure you want to delete this entry?')) return;
 
+                // Find entry and delete its images first
+                const entry = this.entries[this.selectedDate].find(e => e.id === id);
+                if (entry && entry.images) {
+                    for (const imageUrl of entry.images) {
+                        const imageId = imageUrl.replace('image-', '');
+                        await this.deleteImageFromIndexedDB(imageId);
+                    }
+                }
+
                 this.entries[this.selectedDate] = this.entries[this.selectedDate].filter(e => e.id !== id);
 
                 if (this.entries[this.selectedDate].length === 0) {
@@ -2050,6 +2185,321 @@
                 await store.delete(imageId);
             }
 
+            // Toggle header menu visibility
+            toggleHeaderMenu() {
+                this.headerDropdown.classList.toggle('show');
+            }
+
+            // Hide header menu
+            hideHeaderMenu() {
+                this.headerDropdown.classList.remove('show');
+            }
+
+            // Show export modal
+            showExportModal(isMonth = false) {
+                this.isMonthExport = isMonth;
+                this.exportModal.classList.add('show');
+                this.hideHeaderMenu();
+            }
+
+            // Hide export modal
+            hideExportModal() {
+                this.exportModal.classList.remove('show');
+            }
+
+            // Export everything in one file
+            async exportAll() {
+                this.hideExportModal();
+                
+                // Get text data
+                let textData;
+                if (this.isMonthExport && this.selectedDate) {
+                    const [year, month] = this.selectedDate.split('-');
+                    const monthKey = `${year}-${month}`;
+                    textData = {};
+                    for (const [date, entries] of Object.entries(this.entries)) {
+                        if (date.startsWith(monthKey)) {
+                            textData[date] = entries.map(entry => ({
+                                id: entry.id,
+                                text: entry.text,
+                                images: entry.images || [],
+                                createdAt: entry.createdAt,
+                                updatedAt: entry.updatedAt
+                            }));
+                        }
+                    }
+                } else {
+                    textData = {};
+                    for (const [date, entries] of Object.entries(this.entries)) {
+                        textData[date] = entries.map(entry => ({
+                            id: entry.id,
+                            text: entry.text,
+                            images: entry.images || [],
+                            createdAt: entry.createdAt,
+                            updatedAt: entry.updatedAt
+                        }));
+                    }
+                }
+                
+                // Get image data
+                const db = await this.initDB();
+                const imageData = await new Promise((resolve) => {
+                    const transaction = db.transaction(['images'], 'readonly');
+                    const store = transaction.objectStore('images');
+                    const request = store.getAll();
+                    request.onsuccess = () => {
+                        const images = {};
+                        request.result.forEach(image => {
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                                images[image.id] = reader.result;
+                                if (Object.keys(images).length === request.result.length) {
+                                    resolve(images);
+                                }
+                            };
+                            reader.readAsDataURL(image.blob);
+                        });
+                        if (request.result.length === 0) resolve({});
+                    };
+                });
+                
+                // Combine data
+                const combinedData = {
+                    version: '1.0',
+                    exportDate: new Date().toISOString(),
+                    entries: textData,
+                    images: imageData
+                };
+                
+                const jsonData = JSON.stringify(combinedData, null, 2);
+                const blob = new Blob([jsonData], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `diary-complete-${this.isMonthExport ? 'month-' : ''}${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+
+            // Export text entries as JSON
+            async exportText() {
+                this.hideExportModal();
+                
+                let dataToExport;
+                if (this.isMonthExport && this.selectedDate) {
+                    // Export current month only
+                    const [year, month] = this.selectedDate.split('-');
+                    const monthKey = `${year}-${month}`;
+                    dataToExport = {};
+                    
+                    for (const [date, entries] of Object.entries(this.entries)) {
+                        if (date.startsWith(monthKey)) {
+                            dataToExport[date] = entries.map(entry => ({
+                                id: entry.id,
+                                text: entry.text,
+                                images: entry.images || [],
+                                createdAt: entry.createdAt,
+                                updatedAt: entry.updatedAt
+                            }));
+                        }
+                    }
+                } else {
+                    // Export all entries
+                    dataToExport = {};
+                    for (const [date, entries] of Object.entries(this.entries)) {
+                        dataToExport[date] = entries.map(entry => ({
+                            id: entry.id,
+                            text: entry.text,
+                            images: entry.images || [],
+                            createdAt: entry.createdAt,
+                            updatedAt: entry.updatedAt
+                        }));
+                    }
+                }
+                
+                const jsonData = JSON.stringify(dataToExport, null, 2);
+                const blob = new Blob([jsonData], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `diary-text-${this.isMonthExport ? 'month-' : ''}${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+
+            // Export images as ZIP (using JSZip would be ideal, but keeping it simple with JSON for now)
+            async exportImages() {
+                this.hideExportModal();
+                
+                const db = await this.initDB();
+                const transaction = db.transaction(['images'], 'readonly');
+                const store = transaction.objectStore('images');
+                const request = store.getAll();
+                
+                request.onsuccess = () => {
+                    const images = request.result;
+                    if (images.length === 0) {
+                        alert('No images to export.');
+                        return;
+                    }
+                    
+                    // Create a simple JSON export with base64 encoded images
+                    const imageData = {};
+                    let processed = 0;
+                    
+                    images.forEach(async (image, index) => {
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            imageData[image.id] = reader.result;
+                            processed++;
+                            
+                            if (processed === images.length) {
+                                const jsonData = JSON.stringify(imageData, null, 2);
+                                const blob = new Blob([jsonData], { type: 'application/json' });
+                                const url = URL.createObjectURL(blob);
+                                
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = `diary-images-${this.isMonthExport ? 'month-' : ''}${new Date().toISOString().split('T')[0]}.json`;
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                URL.revokeObjectURL(url);
+                            }
+                        };
+                        reader.readAsDataURL(image.blob);
+                    });
+                };
+            }
+
+            // Handle import file
+            async handleImport(file) {
+                if (!file) return;
+                
+                this.hideHeaderMenu();
+                
+                try {
+                    const text = await file.text();
+                    const data = JSON.parse(text);
+                    
+                    // Check file type and import accordingly
+                    if (this.isCombinedData(data)) {
+                        await this.importCombinedData(data);
+                        alert('Complete diary backup imported successfully!');
+                    } else if (this.isTextData(data)) {
+                        await this.importTextData(data);
+                        alert('Text entries imported successfully!');
+                    } else if (this.isImageData(data)) {
+                        await this.importImageData(data);
+                        alert('Images imported successfully!');
+                    } else {
+                        alert('Invalid file format. Supported: .json diary exports');
+                    }
+                } catch (error) {
+                    alert('Error importing file. Please check the file format.');
+                    console.error('Import error:', error);
+                }
+                
+                // Reset file input
+                this.importInput.value = '';
+            }
+
+            // Check if data is combined format
+            isCombinedData(data) {
+                return data && data.version && data.entries && data.images;
+            }
+
+            // Import combined data
+            async importCombinedData(data) {
+                // Import images first
+                if (data.images && Object.keys(data.images).length > 0) {
+                    await this.importImageData(data.images);
+                }
+                // Then import text entries
+                if (data.entries && Object.keys(data.entries).length > 0) {
+                    await this.importTextData(data.entries);
+                }
+            }
+
+            // Check if data is text entries format
+            isTextData(data) {
+                if (typeof data !== 'object') return false;
+                for (const [key, value] of Object.entries(data)) {
+                    if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) return false;
+                    if (!Array.isArray(value)) return false;
+                    if (value.length > 0 && (!value[0].hasOwnProperty('id'))) return false;
+                }
+                return true;
+            }
+
+            // Check if data is image data format
+            isImageData(data) {
+                if (typeof data !== 'object') return false;
+                for (const [key, value] of Object.entries(data)) {
+                    if (typeof value !== 'string' || !value.startsWith('data:image/')) return false;
+                }
+                return true;
+            }
+
+            // Import text data
+            async importTextData(data) {
+                for (const [date, entries] of Object.entries(data)) {
+                    if (!this.entries[date]) {
+                        this.entries[date] = [];
+                    }
+                    
+                    for (const entry of entries) {
+                        // Check for duplicates by ID
+                        const exists = this.entries[date].some(e => e.id === entry.id);
+                        if (!exists) {
+                            this.entries[date].push(entry);
+                        }
+                    }
+                }
+                
+                await this.saveEntries();
+                this.renderCalendar();
+                if (this.selectedDate) {
+                    this.renderEntries(this.selectedDate);
+                }
+            }
+
+            // Import image data
+            async importImageData(data) {
+                const db = await this.initDB();
+                
+                for (const [imageId, base64Data] of Object.entries(data)) {
+                    // Check if image already exists
+                    const existing = await new Promise((resolve, reject) => {
+                        const transaction = db.transaction(['images'], 'readonly');
+                        const store = transaction.objectStore('images');
+                        const request = store.get(imageId);
+                        request.onsuccess = () => resolve(request.result);
+                        request.onerror = () => reject(request.error);
+                    });
+                    
+                    if (!existing) {
+                        // Convert base64 to blob and save
+                        const response = await fetch(base64Data);
+                        const blob = await response.blob();
+                        
+                        await new Promise((resolve, reject) => {
+                            const transaction = db.transaction(['images'], 'readwrite');
+                            const store = transaction.objectStore('images');
+                            const request = store.put({ id: imageId, blob: blob });
+                            request.onsuccess = () => resolve();
+                            request.onerror = () => reject(request.error);
+                        });
+                    }
+                }
+            }
+
             // Toggle between dark and light themes
             toggleTheme() {
                 const currentTheme = document.documentElement.getAttribute('data-theme');
@@ -2058,8 +2508,8 @@
                 document.documentElement.setAttribute('data-theme', newTheme);
                 localStorage.setItem('theme', newTheme);
                 
-                const icon = this.themeToggle.querySelector('i');
-                icon.className = newTheme === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
+                this.themeIcon.className = newTheme === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
+                this.hideHeaderMenu();
             }
         }
 

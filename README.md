@@ -2,12 +2,9 @@
 
 A PWA (Progressive Web App), privacy-focused digital diary application that runs entirely in your browser. Your thoughts stay local, secure, and private unless explicitly shared. Track your life daily, then recall your memories with ease, it's fun.
 
-## 📸 Screenshot
-
 ![Private Diary App](assets/screenshots/screenshot.png)
-- *The clean, intuitive interface of Private Diary showing the calendar view and entry form*
 
-## 🚀 Progressive Web App Benefits
+## Progressive Web App Benefits
 
 - **Works completely offline**: After your first visit, the app works without internet connection thanks to Service Worker technology
 - **Works offline forever**: Once cached, the app works offline permanently - no internet required
@@ -15,6 +12,48 @@ A PWA (Progressive Web App), privacy-focused digital diary application that runs
 - **Works on phone without installing anything**: Just add to home screen for native app experience
 - **Native app experience**: Runs in fullscreen mode without browser UI when installed
 - **Cross-platform**: Works identically on Android, iOS, Windows, Mac, and Linux
+
+## 🚀 Getting Started
+
+### 🌐 Online Access
+1. **Visit the app**: Go to https://kaydansky.github.io/private-diary-pwa
+2. **Start immediately**: No registration, downloads, or setup required
+3. **Your data stays local**: Even though the app is hosted online, all your diary entries are stored only on your device
+
+### 📱 Add to Home Screen
+**Android (Chrome/Edge):**
+1. Visit the app URL in your browser
+2. Tap the menu (⋮) → "Add to Home Screen" or "Install App"
+3. Confirm installation
+4. Launch from your home screen like any native app
+
+**iOS (Safari):**
+1. Visit the app URL in Safari
+2. Tap the Share button (□↗) → "Add to Home Screen"
+3. Confirm installation
+4. Launch from your home screen
+
+**Desktop (Chrome/Edge):**
+1. Visit the app URL
+2. Click the install icon (⊕) in the address bar
+3. Or go to Settings → "Install Private Diary"
+
+### 🔒 Privacy Note
+Even though the app is accessed via a public URL, **all your diary entries remain 100% private and local to your device**. The online hosting only delivers the app code - your personal data never leaves your device.
+
+### ✍️ Using the App
+1. **Start writing**: Click on today's date and hit "Add Entry"
+2. **Add images**: Click "Image" button to upload photos or take pictures
+3. **Navigate**: Use the calendar to browse different dates
+4. **Search**: Use the search box to find specific entries
+5. **Share selected day entries**: Click "Share" button next to "Add Entry" one
+6. **Share single entry**: Click 3 dots next to an entry → "Share"
+7. **Edit entry**: Click 3 dots next to an entry → "Edit"
+8. **Delete entry**: Click 3 dots next to an entry → "Delete"
+9. **Image actions**: Long-press (mobile) or right-click (desktop) images for options
+10. **Export/Import**: Click 3 dots menu (top-right) → "Export" or "Import"
+11. **Month export**: Click export icon (•) next to month name for month-specific backup
+12. **Customize**: Toggle between light and dark themes via 3 dots menu
 
 ## ✨ Features
 
@@ -92,52 +131,23 @@ A PWA (Progressive Web App), privacy-focused digital diary application that runs
 - **Mixed entries**: Combine text and images in single diary entries
 - **Image-only entries**: Create entries with just images when words aren't enough
 
+### 📥📤 Export/Import System
+- **Complete backup**: Export all diary entries and images in a single JSON file
+- **Selective export**: Choose to export text-only or images-only when needed
+- **Month-specific export**: Export data for specific months using the calendar export button
+- **Smart import**: Automatically detects file format and imports accordingly
+- **Duplicate protection**: Skips existing entries and images during import to prevent duplicates
+- **Cross-device sync**: Transfer your diary between devices while maintaining privacy
+- **Data integrity**: Maintains image-entry relationships during export/import process
+- **Version tracking**: Export files include metadata for future compatibility
+- **Local processing**: All export/import operations happen locally - no server involved
+
 ### 🎯 User Experience
 - **Clean interface**: Minimalist design focuses on your content
 - **Smooth animations**: Subtle transitions enhance the user experience
 - **Visual feedback**: Hover effects and state changes provide clear interaction cues
 - **Error prevention**: Confirmation dialogs for destructive actions
 - **Loading states**: Proper handling of asynchronous operations
-
-## 🚀 Getting Started
-
-### 🌐 Online Access
-1. **Visit the app**: Go to https://kaydansky.github.io/private-diary-pwa
-2. **Start immediately**: No registration, downloads, or setup required
-3. **Your data stays local**: Even though the app is hosted online, all your diary entries are stored only on your device
-
-### 📱 Add to Home Screen
-**Android (Chrome/Edge):**
-1. Visit the app URL in your browser
-2. Tap the menu (⋮) → "Add to Home Screen" or "Install App"
-3. Confirm installation
-4. Launch from your home screen like any native app
-
-**iOS (Safari):**
-1. Visit the app URL in Safari
-2. Tap the Share button (□↗) → "Add to Home Screen"
-3. Confirm installation
-4. Launch from your home screen
-
-**Desktop (Chrome/Edge):**
-1. Visit the app URL
-2. Click the install icon (⊕) in the address bar
-3. Or go to Settings → "Install Private Diary"
-
-### 🔒 Privacy Note
-Even though the app is accessed via a public URL, **all your diary entries remain 100% private and local to your device**. The online hosting only delivers the app code - your personal data never leaves your device.
-
-### ✍️ Using the App
-1. **Start writing**: Click on today's date and hit "Add Entry"
-2. **Add images**: Click "Image" button to upload photos or take pictures
-3. **Navigate**: Use the calendar to browse different dates
-4. **Search**: Use the search box to find specific entries
-5. **Share selected day entries**: Click "Share" button next to "Add Entry" one
-6. **Share single entry**: Click 3 dots next to an entry → "Share"
-7. **Edit entry**: Click 3 dots next to an entry → "Edit"
-8. **Delete entry**: Click 3 dots next to an entry → "Delete"
-9. **Image actions**: Long-press (mobile) or right-click (desktop) images for options
-10. **Customize**: Toggle between light and dark themes
 
 ## 💻 Technical Details
 
@@ -156,7 +166,8 @@ Even though the app is accessed via a public URL, **all your diary entries remai
 - **Database**: IndexedDB with structured object stores
 - **Capacity**: Virtually unlimited storage (subject to browser quotas)
 - **Data format**: JSON-structured entries with timestamps
-- **Backup**: Data can be exported through browser developer tools
+- **Export formats**: JSON files with complete data and metadata
+- **Import compatibility**: Supports all diary export formats (complete, text-only, images-only)
 
 ### Performance Features
 - **Lazy loading**: Calendar renders efficiently for any month/year
@@ -171,6 +182,7 @@ Even though the app is accessed via a public URL, **all your diary entries remai
 - **Secure storage**: IndexedDB provides secure, sandboxed storage
 - **XSS protection**: All user input is properly escaped and sanitized
 - **Offline-first**: Works without internet connection
+- **Export privacy**: All export/import operations happen locally on your device
 
 ## 💻 Local Development
 
