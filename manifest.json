@@ -1,8 +1,8 @@
 {
   "name": "Private Diary",
   "short_name": "Diary",
-  "id": "/",
-  "start_url": "/",
+  "id": "/private-diary-pwa/",
+  "start_url": "/private-diary-pwa/",
   "display": "standalone",
   "background_color": "#1a1a1a",
   "theme_color": "#667eea",
