@@ -37,7 +37,7 @@
             --header-text: #333333;
             --border-color: #e0e0e0;
             --search-bg: #f8f9fa;
-            --day-bg: #e5e8eb;
+            --day-bg: #dde0e2;
             --day-hover: #d8dbdd;
             --entry-bg: #f8f9fa;
             --shadow: rgba(0, 0, 0, 0.1);
@@ -1087,10 +1087,10 @@
                         <i class="bi bi-moon-fill" id="themeIcon"></i> Toggle Theme
                     </button>
                     <button class="header-menu-item" id="exportBtn">
-                        <i class="bi bi-box-arrow-right"></i> Export
+                        <i class="bi bi-upload"></i> Export
                     </button>
                     <button class="header-menu-item" id="importBtn" title="Supported data format: JSON diary exports">
-                        <i class="bi bi-box-arrow-in-left"></i> Import .JSON
+                        <i class="bi bi-download"></i> Import .JSON
                     </button>
                 </div>
             </div>
@@ -1106,7 +1106,7 @@
                 <div class="calendar-header">
                     <div class="month-title-container">
                         <h2 id="currentMonth"></h2>
-                        <span style="opacity: 0.7; font-size: 1.5rem;">•</span>
+                        <!-- <span style="opacity: 0.7; font-size: 1.5rem;">•</span> -->
                         <button class="month-export" id="monthExportBtn" title="Export this month">
                             <i class="bi bi-upload"></i>
                         </button>
@@ -1328,6 +1328,7 @@
                 this.prevMonthBtn.addEventListener('click', () => this.changeMonth(-1));
                 this.nextMonthBtn.addEventListener('click', () => this.changeMonth(1));
                 this.todayBtn.addEventListener('click', () => this.goToToday());
+                this.initSwipeAndWheelNavigation();
                 this.addEntryBtn.addEventListener('click', () => this.showEntryForm());
                 this.addImageBtn.addEventListener('click', () => this.handleImageUpload());
                 this.shareDayBtn.addEventListener('click', () => this.shareDay());
@@ -2028,6 +2029,7 @@
                 if (imageBlob) {
                     this.modalImage.src = URL.createObjectURL(imageBlob);
                     this.imageModal.classList.add('show');
+                    this.addModalCloseHandlers();
                 }
             }
 
@@ -2035,6 +2037,35 @@
             closeImageModal() {
                 this.imageModal.classList.remove('show');
                 URL.revokeObjectURL(this.modalImage.src);
+                this.removeModalCloseHandlers();
+            }
+
+            // Add modal close handlers
+            addModalCloseHandlers() {
+                this.handleEscKey = (e) => {
+                    if (e.key === 'Escape') this.closeImageModal();
+                };
+                this.handlePopState = () => {
+                    if (this.imageModal.classList.contains('show')) {
+                        this.closeImageModal();
+                        history.pushState(null, '', location.href);
+                    }
+                };
+                document.addEventListener('keydown', this.handleEscKey);
+                window.addEventListener('popstate', this.handlePopState);
+                history.pushState(null, '', location.href);
+            }
+
+            // Remove modal close handlers
+            removeModalCloseHandlers() {
+                if (this.handleEscKey) {
+                    document.removeEventListener('keydown', this.handleEscKey);
+                    this.handleEscKey = null;
+                }
+                if (this.handlePopState) {
+                    window.removeEventListener('popstate', this.handlePopState);
+                    this.handlePopState = null;
+                }
             }
 
             // Get image from IndexedDB
@@ -2530,6 +2561,49 @@
                 
                 this.themeIcon.className = newTheme === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
                 this.hideHeaderMenu();
+            }
+
+            // Initialize swipe and wheel navigation for calendar
+            initSwipeAndWheelNavigation() {
+                let startX = 0;
+                let startY = 0;
+                
+                // Touch events for swipe navigation
+                this.calendarDays.addEventListener('touchstart', (e) => {
+                    startX = e.touches[0].clientX;
+                    startY = e.touches[0].clientY;
+                }, { passive: true });
+                
+                this.calendarDays.addEventListener('touchend', (e) => {
+                    if (!startX || !startY) return;
+                    
+                    const endX = e.changedTouches[0].clientX;
+                    const endY = e.changedTouches[0].clientY;
+                    const diffX = startX - endX;
+                    const diffY = startY - endY;
+                    
+                    // Only trigger if horizontal swipe is dominant and significant
+                    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
+                        if (diffX > 0) {
+                            this.changeMonth(1); // Swipe left = next month
+                        } else {
+                            this.changeMonth(-1); // Swipe right = prev month
+                        }
+                    }
+                    
+                    startX = 0;
+                    startY = 0;
+                }, { passive: true });
+                
+                // Mouse wheel navigation for desktop
+                this.calendarDays.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    if (e.deltaY > 0) {
+                        this.changeMonth(1); // Scroll down = next month
+                    } else {
+                        this.changeMonth(-1); // Scroll up = prev month
+                    }
+                }, { passive: false });
             }
         }
 
