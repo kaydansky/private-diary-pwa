@@ -283,6 +283,15 @@
             display: grid;
             grid-template-columns: repeat(7, 1fr);
             gap: 10px;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .days.swipe-left {
+            transform: translateX(-100%);
+        }
+
+        .days.swipe-right {
+            transform: translateX(100%);
         }
 
         .day {
@@ -2584,11 +2593,8 @@
                     
                     // Only trigger if horizontal swipe is dominant and significant
                     if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
-                        if (diffX > 0) {
-                            this.changeMonth(1); // Swipe left = next month
-                        } else {
-                            this.changeMonth(-1); // Swipe right = prev month
-                        }
+                        const direction = diffX > 0 ? 1 : -1;
+                        this.animatePageTurn(direction);
                     }
                     
                     startX = 0;
@@ -2604,6 +2610,18 @@
                         this.changeMonth(-1); // Scroll up = prev month
                     }
                 }, { passive: false });
+            }
+
+            // Animate page turning effect for mobile swipe
+            animatePageTurn(direction) {
+                const animationClass = direction > 0 ? 'swipe-left' : 'swipe-right';
+                
+                this.calendarDays.classList.add(animationClass);
+                
+                setTimeout(() => {
+                    this.changeMonth(direction);
+                    this.calendarDays.classList.remove(animationClass);
+                }, 150);
             }
         }
 
