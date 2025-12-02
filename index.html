@@ -2581,6 +2581,20 @@
                 this.calendarDays.addEventListener('touchstart', (e) => {
                     startX = e.touches[0].clientX;
                     startY = e.touches[0].clientY;
+                    this.calendarDays.style.transition = 'none';
+                }, { passive: true });
+                
+                this.calendarDays.addEventListener('touchmove', (e) => {
+                    if (!startX) return;
+                    
+                    const currentX = e.touches[0].clientX;
+                    const diffX = currentX - startX;
+                    
+                    // Only move if horizontal movement is dominant
+                    if (Math.abs(diffX) > 10) {
+                        const translateX = Math.max(-100, Math.min(100, diffX * 0.3));
+                        this.calendarDays.style.transform = `translateX(${translateX}px)`;
+                    }
                 }, { passive: true });
                 
                 this.calendarDays.addEventListener('touchend', (e) => {
@@ -2590,6 +2604,9 @@
                     const endY = e.changedTouches[0].clientY;
                     const diffX = startX - endX;
                     const diffY = startY - endY;
+                    
+                    this.calendarDays.style.transition = '';
+                    this.calendarDays.style.transform = '';
                     
                     // Only trigger if horizontal swipe is dominant and significant
                     if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
