@@ -1499,7 +1499,8 @@
 
             // Initialize app after loading entries from IndexedDB
             async init() {
-                this.entries = await this.loadEntries();
+                this.entries = {};
+                await this.loadEntriesForMonth(this.currentDate.getFullYear(), this.currentDate.getMonth());
                 this.initEventListeners();
                 this.initSearchIndex();
                 this.initTheme();
@@ -1716,37 +1717,45 @@
                 });
             }
 
-            // Load all entries from IndexedDB
-            async loadEntries() {
+            // Load entries for specific month
+            async loadEntriesForMonth(year, month) {
                 const db = await this.initDB();
+                const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
+                
+                // Clear existing entries
+                this.entries = {};
+                
                 return new Promise((resolve, reject) => {
                     const transaction = db.transaction(['entries'], 'readonly');
                     const store = transaction.objectStore('entries');
                     const request = store.getAll();
                     
                     request.onsuccess = () => {
-                        const entries = {};
                         request.result.forEach(item => {
-                            entries[item.date] = item.entries;
+                            if (item.date.startsWith(monthKey)) {
+                                this.entries[item.date] = item.entries;
+                            }
                         });
-                        resolve(entries);
+                        this.updateSearchIndex();
+                        resolve();
                     };
                     request.onerror = () => reject(request.error);
                 });
             }
 
-            // Save all entries to IndexedDB and update search index
+            // Save entries to IndexedDB
             async saveEntries() {
                 const db = await this.initDB();
                 const transaction = db.transaction(['entries'], 'readwrite');
                 const store = transaction.objectStore('entries');
                 
-                // Clear existing data
-                await store.clear();
-                
-                // Save new data
+                // Save only loaded entries
                 for (const [date, entries] of Object.entries(this.entries)) {
-                    await store.put({ date, entries });
+                    if (entries.length === 0) {
+                        await store.delete(date);
+                    } else {
+                        await store.put({ date, entries });
+                    }
                 }
                 
                 this.updateSearchIndex();
@@ -1769,29 +1778,60 @@
 
             // Rebuild search index with current entries
             updateSearchIndex() {
+                if (!this.searchIndex) return;
+                
                 const documents = [];
                 for (const [date, entries] of Object.entries(this.entries)) {
                     entries.forEach(entry => {
-                        documents.push({
-                            id: entry.id,
-                            date: date,
-                            text: entry.text
-                        });
+                        if (entry.text) {
+                            documents.push({
+                                id: entry.id,
+                                date: date,
+                                text: entry.text
+                            });
+                        }
                     });
                 }
 
                 this.searchIndex.removeAll();
-                this.searchIndex.addAll(documents);
+                if (documents.length > 0) {
+                    this.searchIndex.addAll(documents);
+                }
             }
 
             // Handle search input and display results
-            handleSearch(query) {
+            async handleSearch(query) {
                 if (!query.trim()) {
                     this.searchResults.classList.add('hidden');
                     return;
                 }
 
-                const results = this.searchIndex.search(query, { limit: 10 });
+                // Search in IndexedDB directly
+                const db = await this.initDB();
+                const results = await new Promise((resolve) => {
+                    const transaction = db.transaction(['entries'], 'readonly');
+                    const store = transaction.objectStore('entries');
+                    const request = store.getAll();
+                    
+                    request.onsuccess = () => {
+                        const matches = [];
+                        const lowerQuery = query.toLowerCase();
+                        
+                        request.result.forEach(item => {
+                            item.entries.forEach(entry => {
+                                if (entry.text.toLowerCase().includes(lowerQuery)) {
+                                    matches.push({
+                                        date: item.date,
+                                        text: entry.text,
+                                        id: entry.id
+                                    });
+                                }
+                            });
+                        });
+                        
+                        resolve(matches.slice(0, 10));
+                    };
+                });
 
                 if (results.length === 0) {
                     this.searchResults.innerHTML = '<div class="no-entries">No results found</div>';
@@ -1810,11 +1850,12 @@
                 }).join('');
 
                 this.searchResults.querySelectorAll('.search-result-item').forEach(item => {
-                    item.addEventListener('click', () => {
+                    item.addEventListener('click', async () => {
                         const date = item.dataset.date;
                         const [year, month, day] = date.split('-').map(Number);
                         this.currentDate = new Date(year, month - 1, day);
                         this.selectedDate = date;
+                        await this.loadEntriesForMonth(year, month - 1);
                         this.renderCalendar();
                         this.showEntries(date);
                         this.searchInput.value = '';
@@ -1842,17 +1883,19 @@
             }
 
             // Navigate to previous or next month
-            changeMonth(direction) {
+            async changeMonth(direction) {
                 if (!this.canNavigateToFuture(direction)) return;
                 
                 this.currentDate.setMonth(this.currentDate.getMonth() + direction);
+                await this.loadEntriesForMonth(this.currentDate.getFullYear(), this.currentDate.getMonth());
                 this.renderCalendar();
             }
 
             // Jump to today's date and show entries
-            goToToday() {
+            async goToToday() {
                 this.currentDate = new Date();
                 this.selectedDate = this.formatDateKey(new Date());
+                await this.loadEntriesForMonth(this.currentDate.getFullYear(), this.currentDate.getMonth());
                 this.renderCalendar();
                 this.showEntries(this.selectedDate);
             }
@@ -2551,38 +2594,57 @@
             async exportAll() {
                 this.hideExportModal();
                 
-                // Get text data
+                // Get text data from IndexedDB
+                const db = await this.initDB();
                 let textData;
+                
                 if (this.isMonthExport && this.selectedDate) {
                     const [year, month] = this.selectedDate.split('-');
                     const monthKey = `${year}-${month}`;
-                    textData = {};
-                    for (const [date, entries] of Object.entries(this.entries)) {
-                        if (date.startsWith(monthKey)) {
-                            textData[date] = entries.map(entry => ({
-                                id: entry.id,
-                                text: entry.text,
-                                images: entry.images || [],
-                                createdAt: entry.createdAt,
-                                updatedAt: entry.updatedAt
-                            }));
-                        }
-                    }
+                    textData = await new Promise((resolve) => {
+                        const transaction = db.transaction(['entries'], 'readonly');
+                        const store = transaction.objectStore('entries');
+                        const request = store.getAll();
+                        
+                        request.onsuccess = () => {
+                            const data = {};
+                            request.result.forEach(item => {
+                                if (item.date.startsWith(monthKey)) {
+                                    data[item.date] = item.entries.map(entry => ({
+                                        id: entry.id,
+                                        text: entry.text,
+                                        images: entry.images || [],
+                                        createdAt: entry.createdAt,
+                                        updatedAt: entry.updatedAt
+                                    }));
+                                }
+                            });
+                            resolve(data);
+                        };
+                    });
                 } else {
-                    textData = {};
-                    for (const [date, entries] of Object.entries(this.entries)) {
-                        textData[date] = entries.map(entry => ({
-                            id: entry.id,
-                            text: entry.text,
-                            images: entry.images || [],
-                            createdAt: entry.createdAt,
-                            updatedAt: entry.updatedAt
-                        }));
-                    }
+                    textData = await new Promise((resolve) => {
+                        const transaction = db.transaction(['entries'], 'readonly');
+                        const store = transaction.objectStore('entries');
+                        const request = store.getAll();
+                        
+                        request.onsuccess = () => {
+                            const data = {};
+                            request.result.forEach(item => {
+                                data[item.date] = item.entries.map(entry => ({
+                                    id: entry.id,
+                                    text: entry.text,
+                                    images: entry.images || [],
+                                    createdAt: entry.createdAt,
+                                    updatedAt: entry.updatedAt
+                                }));
+                            });
+                            resolve(data);
+                        };
+                    });
                 }
                 
                 // Get image data
-                const db = await this.initDB();
                 const imageData = await new Promise((resolve) => {
                     const transaction = db.transaction(['images'], 'readonly');
                     const store = transaction.objectStore('images');
@@ -2636,36 +2698,54 @@
             async exportText() {
                 this.hideExportModal();
                 
+                // Get data from IndexedDB
+                const db = await this.initDB();
                 let dataToExport;
+                
                 if (this.isMonthExport && this.selectedDate) {
-                    // Export current month only
                     const [year, month] = this.selectedDate.split('-');
                     const monthKey = `${year}-${month}`;
-                    dataToExport = {};
-                    
-                    for (const [date, entries] of Object.entries(this.entries)) {
-                        if (date.startsWith(monthKey)) {
-                            dataToExport[date] = entries.map(entry => ({
-                                id: entry.id,
-                                text: entry.text,
-                                images: entry.images || [],
-                                createdAt: entry.createdAt,
-                                updatedAt: entry.updatedAt
-                            }));
-                        }
-                    }
+                    dataToExport = await new Promise((resolve) => {
+                        const transaction = db.transaction(['entries'], 'readonly');
+                        const store = transaction.objectStore('entries');
+                        const request = store.getAll();
+                        
+                        request.onsuccess = () => {
+                            const data = {};
+                            request.result.forEach(item => {
+                                if (item.date.startsWith(monthKey)) {
+                                    data[item.date] = item.entries.map(entry => ({
+                                        id: entry.id,
+                                        text: entry.text,
+                                        images: entry.images || [],
+                                        createdAt: entry.createdAt,
+                                        updatedAt: entry.updatedAt
+                                    }));
+                                }
+                            });
+                            resolve(data);
+                        };
+                    });
                 } else {
-                    // Export all entries
-                    dataToExport = {};
-                    for (const [date, entries] of Object.entries(this.entries)) {
-                        dataToExport[date] = entries.map(entry => ({
-                            id: entry.id,
-                            text: entry.text,
-                            images: entry.images || [],
-                            createdAt: entry.createdAt,
-                            updatedAt: entry.updatedAt
-                        }));
-                    }
+                    dataToExport = await new Promise((resolve) => {
+                        const transaction = db.transaction(['entries'], 'readonly');
+                        const store = transaction.objectStore('entries');
+                        const request = store.getAll();
+                        
+                        request.onsuccess = () => {
+                            const data = {};
+                            request.result.forEach(item => {
+                                data[item.date] = item.entries.map(entry => ({
+                                    id: entry.id,
+                                    text: entry.text,
+                                    images: entry.images || [],
+                                    createdAt: entry.createdAt,
+                                    updatedAt: entry.updatedAt
+                                }));
+                            });
+                            resolve(data);
+                        };
+                    });
                 }
                 
                 const jsonData = JSON.stringify(dataToExport, null, 2);
@@ -2815,21 +2895,30 @@
 
             // Import text data
             async importTextData(data) {
+                const db = await this.initDB();
+                const transaction = db.transaction(['entries'], 'readwrite');
+                const store = transaction.objectStore('entries');
+                
                 for (const [date, entries] of Object.entries(data)) {
-                    if (!this.entries[date]) {
-                        this.entries[date] = [];
-                    }
+                    // Get existing entries for this date
+                    const existing = await new Promise((resolve) => {
+                        const req = store.get(date);
+                        req.onsuccess = () => resolve(req.result ? req.result.entries : []);
+                    });
                     
+                    // Merge with new entries, avoiding duplicates
+                    const merged = [...existing];
                     for (const entry of entries) {
-                        // Check for duplicates by ID
-                        const exists = this.entries[date].some(e => e.id === entry.id);
-                        if (!exists) {
-                            this.entries[date].push(entry);
+                        if (!merged.some(e => e.id === entry.id)) {
+                            merged.push(entry);
                         }
                     }
+                    
+                    await store.put({ date, entries: merged });
                 }
                 
-                await this.saveEntries();
+                // Reload current month
+                await this.loadEntriesForMonth(this.currentDate.getFullYear(), this.currentDate.getMonth());
                 this.renderCalendar();
                 if (this.selectedDate) {
                     this.renderEntries(this.selectedDate);
@@ -2953,13 +3042,13 @@
             }
 
             // Animate page turning effect for mobile swipe
-            animatePageTurn(direction) {
+            async animatePageTurn(direction) {
                 const animationClass = direction > 0 ? 'swipe-left' : 'swipe-right';
                 
                 this.calendarDays.classList.add(animationClass);
                 
-                setTimeout(() => {
-                    this.changeMonth(direction);
+                setTimeout(async () => {
+                    await this.changeMonth(direction);
                     this.calendarDays.classList.remove(animationClass);
                 }, 150);
             }
