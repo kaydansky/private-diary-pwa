@@ -53,7 +53,8 @@ Even though the app is accessed via a public URL, **all your diary entries remai
 9. **Image actions**: Long-press (mobile) or right-click (desktop) images for options
 10. **Export/Import**: Click 3 dots menu (top-right) → "Export" or "Import"
 11. **Month export**: Click export icon (•) next to month name for month-specific backup
-12. **Customize**: Toggle between light and dark themes via 3 dots menu
+12. **Change language**: Click 3 dots menu (top-right) → Select your preferred language
+13. **Customize**: Toggle between light and dark themes via 3 dots menu
 
 ## ✨ Features
 
@@ -63,6 +64,15 @@ Even though the app is accessed via a public URL, **all your diary entries remai
 - **Privacy guaranteed**: Your entries never leave your device
 - **Persistent storage**: Data survives browser restarts and system reboots
 - **Performance benefits**: Fast read/write operations with efficient data retrieval
+
+### 🌍 Multi-Language Support
+- **15+ languages**: Currently added: English, French, German. Any languages may be added later easily.
+- **Auto-detection**: Automatically detects your browser's language preference
+- **Manual switching**: Change language anytime via the settings menu (3 dots)
+- **Persistent choice**: Language preference is saved and remembered across sessions
+- **Complete translation**: All UI elements, buttons, and messages are fully translated
+- **RTL support**: Right-to-left layout for Arabic and other RTL languages
+- **Date localization**: Calendar and dates display in your selected language format
 
 ### 🎨 Theme Toggle
 - **Smart theme detection**: Automatically respects your system's dark/light mode preference
