@@ -1728,16 +1728,18 @@
                 return new Promise((resolve, reject) => {
                     const transaction = db.transaction(['entries'], 'readonly');
                     const store = transaction.objectStore('entries');
-                    const request = store.getAll();
+                    const range = IDBKeyRange.bound(monthKey + '-01', monthKey + '-31');
+                    const request = store.openCursor(range);
                     
-                    request.onsuccess = () => {
-                        request.result.forEach(item => {
-                            if (item.date.startsWith(monthKey)) {
-                                this.entries[item.date] = item.entries;
-                            }
-                        });
-                        this.updateSearchIndex();
-                        resolve();
+                    request.onsuccess = (event) => {
+                        const cursor = event.target.result;
+                        if (cursor) {
+                            this.entries[cursor.value.date] = cursor.value.entries;
+                            cursor.continue();
+                        } else {
+                            this.updateSearchIndex();
+                            resolve();
+                        }
                     };
                     request.onerror = () => reject(request.error);
                 });
